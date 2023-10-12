@@ -1,6 +1,14 @@
 # Arquiteturas Cognitivas - Exemplos
 
-Este repositório contém um contêiner Docker que encapsula vários exemplos de um curso. Os exemplos estão organizados em quatro pastas com os nomes "Lida," "Clarion," "SOAR," e "CST." Para executar cada exemplo, você precisa entrar na pasta específica, navegar até a subpasta "Executáveis" e executar o script `exec.sh`. Aqui estão as instruções para começar.
+Este repositório contêm o necessário para execução de um contêiner Docker com exemplos demonstrativos de arquiteturas cognitivas.
+
+## 🕹️ Simulação
+
+Todos os exemplos executam uma simulação [WS3D.](https://github.com/CST-Group/ws3d) O WS3D é um ambiente virtual para experimento com criaturas artificiais. Neste ambiente virtual, é possível criar um conjunto de criaturas virtuais, que são controladas por seus sensores e atuadores, gerenciados por meio de Sockets.
+
+Todos os exemplos utilizam uma simulação do WS3D, onde uma criatura deve explorar o ambiente e coletar jóias e alimentos. As jóias podem ser de 6 cores diferentes e fornem pontos (recompensa) para o agente quando conjuntos específicos são coletados. Além disso, a criatura possui um nível de energia que decai linearmente ao longo do tempo e quando zerado, impede o movimento da criatura. Para recuperar sua energia a mesma deve coletar alimentos (maçãs e nozes) espalhadas pelo ambiente.
+
+Cada exemplo utiliza uma das arquiteturas apresentadas no curso para controlar a criatura no ambiente WS3D.
 
 ## 🚀 Pré-requisitos
 
@@ -42,7 +50,7 @@ Para executar um exemplo, siga estas etapas:
 2. Navegue até a subpasta "Executáveis":
 
    ```bash
-   cd Executáveis/
+   cd Executables/
    ```
 
 3. Execute o script `exec.sh`:
