@@ -1,12 +1,12 @@
 # Arquiteturas Cognitivas - Exemplos
 
-Este repositório contêm o necessário para execução de um contêiner Docker com exemplos demonstrativos de arquiteturas cognitivas.
+Este repositório contém o necessário para execução de um contêiner Docker com exemplos demonstrativos de arquiteturas cognitivas.
 
 ## 🕹️ Simulação
 
 Todos os exemplos executam uma simulação [WS3D.](https://github.com/CST-Group/ws3d) O WS3D é um ambiente virtual para experimento com criaturas artificiais. Neste ambiente virtual, é possível criar um conjunto de criaturas virtuais, que são controladas por seus sensores e atuadores, gerenciados por meio de Sockets.
 
-Todos os exemplos utilizam uma simulação do WS3D, onde uma criatura deve explorar o ambiente e coletar jóias e alimentos. As jóias podem ser de 6 cores diferentes e fornem pontos (recompensa) para o agente quando conjuntos específicos são coletados. Além disso, a criatura possui um nível de energia que decai linearmente ao longo do tempo e quando zerado, impede o movimento da criatura. Para recuperar sua energia a mesma deve coletar alimentos (maçãs e nozes) espalhadas pelo ambiente.
+Todos os exemplos utilizam uma simulação do WS3D, onde uma criatura deve explorar o ambiente e coletar jóias e alimentos. As jóias podem ser de 6 cores diferentes e fornecem pontos (recompensa) para o agente quando conjuntos específicos são coletados. Além disso, a criatura possui um nível de energia que decai linearmente ao longo do tempo e quando zerado, impede o movimento da criatura. Para recuperar sua energia a mesma deve coletar alimentos (maçãs e nozes) espalhadas pelo ambiente.
 
 Cada exemplo utiliza uma das arquiteturas apresentadas no curso para controlar a criatura no ambiente WS3D.
 
@@ -44,19 +44,19 @@ O script `docker.sh` iniciará o contêiner e configurará o ambiente necessári
 
 ### **Windows**
 
-1. Inicie o XServer no Windows.
+1. Inicie o XServer no Windows, conforme os passos abaixo:
     1. Execute o aplicativo XLaunch.exe
-    2. Selecione a opção 'Multiple windows', defina o 'Display number' como 0 e clique Avançar
-    3. Selecione a opção Start no client e clique em Avançar
-    4. Marque a opção 'Disable access control', clique em Avançar e inicie o XServer
+    2. Selecione a opção 'Multiple windows', defina o 'Display number' como 0 e clique 'Avançar'
+    3. Selecione a opção 'Start no client' e clique em 'Avançar'
+    4. Marque a opção 'Disable access control', clique em 'Avançar' e inicie o XServer clicando em 'Concluir'
 3. Inicie o Docker Desktop
-4. Encontre o ip de conexão do WSL
-    1. Inicie o prompt de comando e execute o comando `ipconfig`
+4. Encontre o ip de conexão do WSL, conforme os passos abaixo:
+    1. Inicie o Prompt de Comando e execute o comando `ipconfig`
     2. Encontre o adaptador de conexão com referência ao WSL. Comumente é o adaptador Ethernet e indicará no título `(WSL)`
     3. Copie o endereço de IPv4
-5. Inicie o container Docker com o comando a seguir, inserindo o ip copiado anteriormente na tag `<MY-WSL-IP>`
+5. Ainda no Prompt de Comando, inicie o container Docker com o comando a seguir, inserindo o ip copiado anteriormente na tag `<MY-WSL-IP>`
 ```
-> docker run --rm -it --privileged --e "PULSE_SERVER=/mnt/wslg/PulseServer" -v \\wsl$\Ubuntu\mnt\wslg:/mnt/wslg/ -e DISPLAY=<MY-WSL-IP>:0 brgsil/cog_arq_examples
+docker run --rm -it --privileged -e "PULSE_SERVER=/mnt/wslg/PulseServer" -v \\wsl$\Ubuntu\mnt\wslg:/mnt/wslg/ -e DISPLAY=<MY-WSL-IP>:0 brgsil/cog_arq_examples
 ```
 
 ## 🔍 Acessando os Exemplos do Curso
@@ -76,10 +76,10 @@ Para executar um exemplo, siga estas etapas:
    cd Lida/
    ```
 
-2. Navegue até a subpasta "Executáveis":
+2. Navegue até a subpasta "Executable":
 
    ```bash
-   cd Executables/
+   cd Executable/
    ```
 
 3. Execute o script `exec.sh`:
@@ -90,6 +90,6 @@ Para executar um exemplo, siga estas etapas:
 
 Isso executará o exemplo dentro do contêiner Docker.
 
-Para parar e remover o contêiner Docker quando você terminar de usar os exemplos, digite `Ctrl+d`
+Após finalizar a execução dos exemplos, pode-se parar e remover o contêiner Docker no Prompt de Comando digitando `Ctrl+d`
 
 É isso! Agora você pode explorar e executar os exemplos do curso dentro do contêiner Docker com facilidade.
