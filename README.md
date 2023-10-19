@@ -63,9 +63,9 @@ docker run --rm -it --privileged -e "PULSE_SERVER=/mnt/wslg/PulseServer" -v \\ws
 
 Após iniciar o contêiner Docker, você encontrará quatro pastas dentro do diretório `/examples`, cada uma correspondendo aos exemplos do curso:
 
-1. `Lida`
+1. `SOAR`
 2. `Clarion`
-3. `SOAR`
+3. `Lida`
 4. `CST`
 
 Para executar um exemplo, siga estas etapas:
