@@ -16,19 +16,48 @@ Antes de poder executar os exemplos, você precisa garantir que o Docker Engine 
 
 ### Instalação do Docker Engine
 
+#### **Linux**
+
 Para execução do contêiner é necessário a instalação do Docker Engine. Siga os passos do site oficial do [Docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository).
 
 > ⚠️ Garanta que esteja seguindo as instrução para instalação do Docker Engine por apt. O Docker Desktop para Linux não irá possibilitar o uso das interfaces gráficas dos exemplos.
 
+#### **Windows**
+
+Baixe o instalador e siga os passos de instalação no site do [Docker](https://docs.docker.com/desktop/install/windows-install/).
+
+> ⚠️ Garanta que o WSL 2 esteja instalado conforme as instruções dos [System Requirements](https://docs.docker.com/desktop/install/windows-install/#system-requirements)
+
+Para a utilização no Windows será necessário também a instalação do [VcXsrv](https://sourceforge.net/projects/vcxsrv/)
+
 ## 🏃‍♀️ Executando o Contêiner Docker
 
-Depois de ter o Docker Engine instalado, você pode executar o contêiner Docker que contém os exemplos do curso, executando o seguinte comando em seu terminal:
+### **Linux**
+
+Depois de ter o Docker Engine instalado, você pode executar o contêiner Docker que contém os exemplos do curso, executando o script fornecido neste repositório:
 
 ```bash
 ./docker.sh
 ```
 
 O script `docker.sh` iniciará o contêiner e configurará o ambiente necessário.
+
+### **Windows**
+
+1. Inicie o XServer no Windows.
+    1.1. Execute o aplicativo XLaunch.exe
+    1.2. Selecione a opção 'Multiple windows', defina o 'Display number' como 0 e clique Avançar
+    1.3. Selecione a opção Start no client e clique em Avançar
+    1.4. Marque a opção 'Disable access control', clique em Avançar e inicie o XServer
+2. Inicie o Docker Desktop
+3. Encontre o ip de conexão do WSL
+    3.1. Inicie o prompt de comando e execute o comando `ipconfig`
+    3.2. Encontre o adaptador de conexão com referência ao WSL. Comumente é o adaptador Ethernet e indicará no título `(WSL)`
+    3.3. Copie o endereço de IPv4
+4. Inicie o container Docker com o comando a seguir, inserindo o ip copiado anteriormente na tag `<MY-WSL-IP>`
+```
+> docker run --rm -it --privileged --e "PULSE_SERVER=/mnt/wslg/PulseServer" -v \\wsl$\Ubuntu\mnt\wslg:/mnt/wslg/ -e DISPLAY=<MY-WSL-IP>:0 brgsil/cog_arq_examples
+```
 
 ## 🔍 Acessando os Exemplos do Curso
 
