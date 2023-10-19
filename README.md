@@ -45,16 +45,16 @@ O script `docker.sh` iniciará o contêiner e configurará o ambiente necessári
 ### **Windows**
 
 1. Inicie o XServer no Windows.
-    1.1. Execute o aplicativo XLaunch.exe
-    1.2. Selecione a opção 'Multiple windows', defina o 'Display number' como 0 e clique Avançar
-    1.3. Selecione a opção Start no client e clique em Avançar
-    1.4. Marque a opção 'Disable access control', clique em Avançar e inicie o XServer
-2. Inicie o Docker Desktop
-3. Encontre o ip de conexão do WSL
-    3.1. Inicie o prompt de comando e execute o comando `ipconfig`
-    3.2. Encontre o adaptador de conexão com referência ao WSL. Comumente é o adaptador Ethernet e indicará no título `(WSL)`
-    3.3. Copie o endereço de IPv4
-4. Inicie o container Docker com o comando a seguir, inserindo o ip copiado anteriormente na tag `<MY-WSL-IP>`
+    1. Execute o aplicativo XLaunch.exe
+    2. Selecione a opção 'Multiple windows', defina o 'Display number' como 0 e clique Avançar
+    3. Selecione a opção Start no client e clique em Avançar
+    4. Marque a opção 'Disable access control', clique em Avançar e inicie o XServer
+3. Inicie o Docker Desktop
+4. Encontre o ip de conexão do WSL
+    1. Inicie o prompt de comando e execute o comando `ipconfig`
+    2. Encontre o adaptador de conexão com referência ao WSL. Comumente é o adaptador Ethernet e indicará no título `(WSL)`
+    3. Copie o endereço de IPv4
+5. Inicie o container Docker com o comando a seguir, inserindo o ip copiado anteriormente na tag `<MY-WSL-IP>`
 ```
 > docker run --rm -it --privileged --e "PULSE_SERVER=/mnt/wslg/PulseServer" -v \\wsl$\Ubuntu\mnt\wslg:/mnt/wslg/ -e DISPLAY=<MY-WSL-IP>:0 brgsil/cog_arq_examples
 ```
