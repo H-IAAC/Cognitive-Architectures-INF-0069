@@ -1,5 +1,5 @@
 #!/bin/bash
-sudo apt install xauth -y
+sudo apt install xauth x11-xserver-utils -y
 xhost +
 
 XAUTH=`xauth info | grep file | awk '{print $3}'`
