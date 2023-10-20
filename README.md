@@ -30,6 +30,12 @@ Baixe o instalador e siga os passos de instalação no site do [Docker](https://
 
 Para a utilização no Windows será necessário também a instalação do [VcXsrv](https://sourceforge.net/projects/vcxsrv/)
 
+#### **MacOS**
+
+Baixe o instalador correspondente a seu hardware e siga os passos de instalação no site do [Docker](https://docs.docker.com/desktop/install/mac-install/)
+
+Para utilização no Mac será necessário também a instalação do [XQuatz](https://www.xquartz.org/)
+
 ## 🏃‍♀️ Executando o Contêiner Docker
 
 ### **Linux**
