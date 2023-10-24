@@ -1,10 +1,5 @@
 #!/bin/bash
-PKG_OK=$(dpkg-query -W --showformat='${Status}\n' xauth|grep "install ok installed")
-if [ "" = "$PKG_OK" ]; then
-    echo "Package xauth not installed. Setting up xauth"
-    sudo apt install xauth -y
-fi
-
+sudo apt install xauth x11-xserver-utils -y
 xhost +
 
 XAUTH=`xauth info | grep file | awk '{print $3}'`
