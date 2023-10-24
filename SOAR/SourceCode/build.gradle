@@ -1,0 +1,55 @@
+apply plugin: 'java'
+apply plugin: 'jacoco'
+apply plugin: 'application'
+
+
+mainClassName = 'Simulation.Main'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.soartech:jsoar-core:4.1.0'
+    implementation 'com.soartech:jsoar-debugger:4.1.0'
+    implementation 'com.github.CST-Group:WS3DProxy:0.0.1'
+    implementation 'ch.qos.logback:logback-classic:1.0.11' 
+    testImplementation     'junit:junit:4.13'
+    
+}
+
+jar {
+    from {
+    	//configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA' 
+    manifest {
+      attributes(
+        'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+        'Main-Class': 'Simulation.Main'
+      )
+    }
+}
+
+/*
+task uberJar(type: Jar) {
+    archiveClassifier = 'full'
+    manifest {
+      attributes(
+        'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+        'Main-Class': mainClassName
+      )
+    }
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+}
+artifacts
+{
+    archives uberJar
+}
+*/

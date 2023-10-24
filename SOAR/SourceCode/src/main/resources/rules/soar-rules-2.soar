@@ -1,0 +1,2508 @@
+excise --all
+
+chunk --off
+chunk --disable
+learn off
+
+sp {propose*initialize-plan-agent
+   (state <s> ^superstate nil
+             -^name)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name initialize-plan-agent)
+}
+
+sp {apply*initialize-plan-agent
+   (state <s> ^operator <op>)
+   (<op> ^name initialize-plan-agent)
+-->
+   (<s> ^name plan-agent
+        ^leaflets <a>)
+}
+
+####### APPLY COMMANDS ##########
+
+# Creates the output structures for a operator that creates actions
+
+sp {apply*operator*create-action-command
+   (state <s> ^operator <o>
+              ^superstate.io.output-link <out>)
+   (<o> ^actions <act>)
+   (<act> ^<att> <value>)
+-->
+   (<out> ^<att> <value2>)}
+
+sp {elaborate*action*create-action-atributes
+   (state <s> ^operator <o>
+              ^superstate.io.output-link <out>)
+   (<o> ^actions <act>)
+   (<act> ^<att> <value>)
+   (<value> ^<att2> <value2>)
+   (<out> ^<att> <value3>)
+-->
+   (<value3> ^<att2> <value2>)}
+
+sp {apply*operator*remove-command
+   (state <s> ^operator.actions
+              ^superstate.io.output-link <out>)
+   (<out> ^<att> <value>)
+   (<value> ^status complete)
+-->
+   (<out> ^<att> <value> -)}
+
+
+sp {elaborate*state*name
+   (state <s> ^impasse no-change
+              ^attribute operator
+              ^superstate.operator.name <name>)
+-->
+   (<s> ^name <name>)}
+
+
+#sp {elaborate*state*io
+#   (state <s> ^impasse no-change
+#              ^attribute operator
+#              ^superstate.io <io>)
+#-->
+#   (<s> ^io <io>)}
+
+#sp {elaborate*top-state*top-state
+#   (state <s> ^superstate nil)
+#-->
+#   (<s> ^top-state <s>)
+#}
+#
+
+sp {propose*explore
+   (state <s> ^name plan-agent)
+-->
+   (<s> ^operator <op> +)
+   (<op> ^name explore)
+}
+
+sp {preferences*worst*explore
+   (state <s> ^name plan-agent
+              ^operator <o> +)
+   (<o> ^name explore)
+-->
+   (<s> ^operator <o> <)
+}
+
+
+sp {propose*wander
+   (state <s> ^name explore                           
+              ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^SENSOR.VISUAL <visual>)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name wander
+        ^actions.MOVE <command>)
+   (<command> ^Vel 0
+              ^VelR 2
+              ^VelL 0)         
+}
+
+sp {halt*condition
+   (state <s> ^impasse no-change 
+              ^type state 
+             -^operator 
+              ^attribute state 
+              ^superstate <ss>)
+   (<ss> ^impasse no-change 
+         ^type state
+        -^operator
+         ^attribute state)
+-->
+  #(write I2)
+  #(halt)
+   (interrupt)
+}
+
+#Reject Jewels that are not required for leaflets
+sp {moveJewel*reject*no-leaflet-requires-it
+   (state <s> ^name explore
+              ^operator <o> +
+              ^superstate.io.input-link.CREATURE.LEAFLETS <leaflets>)
+   (<o> ^name moveJewel
+        ^parameter.COLOR <color>)
+   (<leaflets> ^LEAFLET <l1> {<> <l1> <l2>}
+               ^LEAFLET <l2> {<> <l2> <l3>}
+               ^LEAFLET <l3> {<> <l3> <l1>})
+  - {(<l1> ^<color>.MISSING > 0)
+     (<l1> ^DELIVERED NO)}
+                     - {(<l2> ^<color>.MISSING > 0)
+                        (<l2> ^DELIVERED NO)}
+                                        - {(<l3> ^<color>.MISSING > 0)
+                                           (<l3> ^DELIVERED NO)}
+-->
+   (<s> ^operator <o> -)
+}
+
+# Move Jewel vs Get Jewel
+sp {moveJewel*getJewel*preferences
+   (state <s> ^name explore
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name getJewel)
+   (<o2> ^name << moveJewel moveFood moveDelivery >>)
+-->
+   (<s> ^operator <o> > <o2>)
+}
+
+# Get Jewel vs Avoid Brick
+sp {getJewel*avoidBrick*preferences
+   (state <s> ^name explore
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name getJewel)
+   (<o2> ^name avoidBrick)
+-->
+   (<s> ^operator <o> > <o2>)}
+
+# Move Jewel vs Move Jewel Preferences
+sp {moveJewel*moveJewel*less*distance
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<ss> ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<o> ^name moveJewel)
+   (<o2> ^name moveJewel)
+   (<o2> ^parameter.distance <distance2>)
+   (<o>  ^parameter.distance <distance> <= <distance2>)
+-->
+   (<ss> ^operator <o> > <o2>)
+}
+
+# Get Jewel vs Get Jewel Preferences
+sp {getJewel*getJewel*preferences
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<o> ^name getJewel)
+   (<o2> ^name getJewel)
+   (<o2> ^parameter.distance <distance2>)
+   (<o>  ^parameter.distance <distance> <= <distance2>)
+-->
+   (<ss> ^operator <o> > <o2>)
+}
+
+# FOOD
+
+# Move Food vs Eat Food
+sp {moveFood*eatFood*preferences
+   (state <s> ^name explore
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name eatFood)
+   (<o2> ^name << moveFood moveJewel moveDelivery >>)
+-->
+   (<s> ^operator <o> > <o2>)}
+
+# Eat Food vs Avoid Brick
+sp {eatFood*avoidBrick*preferences
+   (state <s> ^name explore
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name eatFood)
+   (<o2> ^name avoidBrick)
+-->
+   (<s> ^operator <o> > <o2>)}
+
+# Move Food vs Move Food Preferences
+sp {moveFood*moveFood*preferences
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<o> ^name moveFood)
+   (<o2> ^name moveFood)
+   (<o2> ^parameter.distance <distance2>)
+   (<o>  ^parameter.distance <distance> <= <distance2>)
+-->
+   (<ss> ^operator <o> > <o2>)}
+
+# Eat Food vs Eat Food Preferences
+sp {eatFood*eatFood*preferences
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<o> ^name eatFood)
+   (<o2> ^name eatFood)
+   (<o2> ^parameter.distance <distance2>)
+   (<o>  ^parameter.distance <distance> <= <distance2>)
+-->
+   (<ss> ^operator <o> > <o2>)}
+
+# DELIVERY
+
+sp {seeEntity*without*memory*preferences
+   (state <s> ^name explore
+              ^operator <o> +)
+   (<o> ^name moveDelivery)
+-->
+   (<s> ^operator <o> =)
+}
+
+sp {moveCommands*deliverLeaflet*preferences
+   (state <s> ^name explore
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name deliverLeaflet)
+   (<o2> ^name << moveFood moveJewel moveDelivery >>)
+-->
+   (<s> ^operator <o> > <o2>)
+}
+
+sp {deliverLeaflet*deliverLeaflet*preferences
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<o> ^name deliverLeaflet)
+   (<o2> ^name deliverLeaflet)
+   (<o2> ^parameter.SCORE <score2>)
+   (<o>  ^parameter.SCORE <score> > <score2>)
+-->
+   (<ss> ^operator <o> > <o2>)
+}
+
+sp {deliverLeaflet*deliverLeaflet*preferences*same-score
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<o> ^name deliverLeaflet)
+   (<o2> ^name deliverLeaflet)
+   (<o2> ^parameter.SCORE <score2>)
+   (<o>  ^parameter.SCORE <score> = <score2>)
+-->
+   (<ss> ^operator <o> =)
+   (<ss> ^operator <o2> =)
+}
+
+sp {deliverLeaflet*avoidBrick*preferences
+   (state <s> ^name explore
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name deliverLeaflet)
+   (<o2> ^name avoidBrick)
+-->
+   (<s> ^operator <o> > <o2>)}
+
+# FOOD vs JEWEL or DELIVERY
+
+# Move Food vs Move Jewel Preferences - Move Food Wins
+sp {moveFood*moveJewel-delivery*preferences*moveFoodWins
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<ss> ^superstate.io.input-link <il>)
+   (<o> ^name moveFood)
+   (<o> ^parameterFuel <threshold>)
+   (<o2> ^name << moveJewel moveDelivery >>)
+   (<il> ^CREATURE.SENSOR.FUEL <fuel>)
+   (<fuel> ^VALUE <value> <= <threshold>)
+-->
+   (<ss> ^operator <o> > <o2>)}
+
+# Move Food vs Move Jewel Preferences - Move Jewel Wins
+sp {moveFood*moveJewel-delivery*preferences*moveJewel-delivery-Wins
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<ss> ^superstate.io.input-link <il>)
+   (<o> ^name moveFood)
+   (<o> ^parameterFuel <threshold>)
+   (<o2> ^name << moveJewel moveDelivery >>)
+   (<il> ^CREATURE.SENSOR.FUEL <fuel>)
+   (<fuel> ^VALUE <value> > <threshold>)
+-->
+   (<ss> ^operator <o2> > <o>)}
+
+# JEWEL vs DELIVERY
+
+sp {moveJewel*moveDelivery*preferences*
+   (state <s> ^name explore
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name moveDelivery)
+   (<o2> ^name moveJewel)
+-->
+   (<s> ^operator <o> > <o2>)}
+
+#BRICK
+
+# Avoid Brick vs Avoid Brick Preferences
+sp {avoidBrick*avoidBrick*without*move*jewel*preferences
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^item-count <itemCount>
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<o> ^name avoidBrick)
+   (<o2> ^name avoidBrick)
+   (<o2> ^parameter <distance2>)
+   (<o>  ^parameter <distance> <= <distance2>)
+-->
+   (<ss> ^operator <o> > <o2>)}
+
+# Avoid Brick vs Move Jewel vs Move Food Preferences with element in memory
+sp {avoidBrick*moveJewel*moveFood*preferences
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^item-count <itemCount> 2
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<o> ^name avoidBrick)
+   (<o2> ^name << moveJewel moveFood >>)
+   (<o2> ^parameter <entity>)
+   (<entity> ^NAME <entityName>)
+   (<ss> ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^MEMORY <memory>)
+   (<memory> ^ENTITY <entityInMemory>)
+   (<entityInMemory> ^NAME <entityName>)
+-->
+   (<o> ^entityName <entityName>)
+   (<ss> ^operator <o> > <o2>)}
+
+sp {avoidBrick*moveDelivery*moveFood*preferences*avoid-wins
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^item-count <itemCount> 2
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<o> ^name avoidBrick)
+   (<o2> ^name moveDelivery)
+   (<o> ^type BRICK)
+   (<o2> ^parameter <entity>)
+   (<entity> ^NAME <entityName>)
+   (<ss> ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^MEMORY <memory>)
+   (<memory> ^ENTITY <entityInMemory>)
+   (<entityInMemory> ^NAME <entityName>)
+-->
+   (<ss> ^operator <o> > <o2>)}
+
+sp {avoidBrick*moveDelivery*moveFood*preferences*deliver-wins
+   (state <s> ^attribute operator
+              ^impasse tie
+              ^item <o> {<> <o> <o2>}
+              ^item-count <itemCount> 2
+              ^superstate <ss>)
+   (<ss> ^name explore)
+   (<o> ^name avoidBrick)
+   (<o2> ^name moveDelivery)
+   (<o> ^type DELIVERY)
+   (<o2> ^parameter <entity>)
+   (<entity> ^NAME <entityName>)
+   (<ss> ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^MEMORY <memory>)
+   (<memory> ^ENTITY <entityInMemory>)
+   (<entityInMemory> ^NAME <entityName>)
+-->
+   (<ss> ^operator <o2> > <o>)}
+
+# WANDER
+
+# Wander Preferences
+sp {wander*preferences
+   (state <s> ^name explore
+              ^operator <o> +)
+   (<o> ^name wander)
+-->
+   (<s> ^operator <o> <)}
+
+sp {propose*avoidBrick
+   (state <s> ^name explore
+              ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^SENSOR.VISUAL.ENTITY <entity>)
+   (<entity> ^TYPE <type> << BRICK DELIVERY >>)
+   (<entity> ^DISTANCE <distance> <= 75)      
+-->
+   (<s> ^operator <o> +)     
+   (<o> ^name avoidBrick)
+   (<o> ^parameter <distance>
+        ^type <type>)
+   (<o> ^actions.MOVE <command>)
+   (<command> ^Vel -0.5
+              ^VelR 0
+              ^VelL -5)
+}
+
+sp {propose*deliver*leaflet*explore
+   (state <s> ^name explore
+              ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^SENSOR.VISUAL.ENTITY <entity>)
+   (<entity> ^TYPE DELIVERY) 
+   (<entity> ^DISTANCE <dsDist> < 130)
+   (<creature> ^LEAFLETS.LEAFLET <l>)
+   (<l> ^COMPLETED YES
+        ^DELIVERED NO
+        ^ID <lID>
+        ^SCORE <score>)
+#   (<creature> ^MEMORY.ENTITY.NAME <memoryItemName> <foodName>)     
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name deliverLeaflet)
+   (<o> ^parameter <leaflet>)
+   (<leaflet> ^SCORE <score>)
+   (<o> ^actions.DELIVER <command>)
+   (<command> ^Id <lID>)
+}
+
+sp {propose*eat*food
+   (state <s> ^name explore
+              ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^SENSOR.VISUAL.ENTITY <entity>)
+   (<entity> ^TYPE FOOD)
+   (<entity> ^DISTANCE <foodDistance> < 50)
+   (<entity> ^NAME <foodName>)
+#   (<creature> ^MEMORY.ENTITY.NAME <memoryItemName> <foodName>)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name eatFood)
+   (<o> ^parameter <food>)
+   (<food> ^DISTANCE <foodDistance>)
+   (<o> ^actions.EAT <command>)
+   (<command> ^Name <foodName>)}
+
+sp {propose*get*jewel*explore
+   (state <s> ^name explore
+              ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^SENSOR.VISUAL.ENTITY <entity>)
+   (<entity> ^TYPE JEWEL) 
+   (<entity> ^DISTANCE <jewelDistance> < 50)
+   (<entity> ^NAME <jewelName>)
+#   (<creature> ^MEMORY.ENTITY.NAME <memoryItemName> <jewelName>)     
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name getJewel)
+   (<o> ^parameter <jewel>)
+   (<jewel> ^DISTANCE <jewelDistance>)
+   (<o> ^actions.GET <command>)
+   (<command> ^Name <jewelName>)
+}
+
+sp {reativo*propose*move_delivery
+   (state <s> ^name explore
+              ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^MEMORY <memory>)
+   (<creature> ^LEAFLETS.LEAFLET <l>)
+   (<l> ^COMPLETED YES
+        ^DELIVERED NO)
+   (<memory> ^ENTITY <entityInMemory>)
+   (<entityInMemory> ^TYPE DELIVERY)
+   (<entityInMemory> ^X <dsPosX>)
+   (<entityInMemory> ^Y <dsPosY>)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name moveDelivery)
+   (<o> ^actions.MOVE <command>)
+   (<command> ^Vel 1
+              ^VelR 1
+              ^VelL 1
+              ^X <dsPosX>
+              ^Y <dsPosY>)
+}
+
+sp {propose*move*food
+   (state <s> ^name explore
+              ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^MEMORY <memory>)
+   (<memory> ^ENTITY <entityInMemory>)
+   (<creature> ^POSITION <creaturePosition>)
+   (<creaturePosition> ^X <creaturePositionX>)
+   (<creaturePosition> ^Y <creaturePositionY>)
+   (<entityInMemory> ^TYPE FOOD)
+   (<entityInMemory> ^X <entityInMemoryPositionX>)
+   (<entityInMemory> ^Y <entityInMemoryPositionY>)
+   (<entityInMemory> ^NAME <entityInMemoryName>) 
+   (<creature> ^PARAMETERS.MINFUEL <minFuel>) 
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name moveFood)
+   (<o> ^parameter <food>)
+   (<food> ^distance (sqrt (+ (* (- <creaturePositionX> <entityInMemoryPositionX>) (- <creaturePositionX> <entityInMemoryPositionX>)) (* (- <creaturePositionY> <entityInMemoryPositionY>) (- <creaturePositionY> <entityInMemoryPositionY>)))))
+   (<food> ^NAME <entityInMemoryName>)
+   (<o> ^parameterFuel <minFuel>)
+   (<o> ^actions.MOVE <command>)
+   (<command> ^Vel 1
+              ^VelR 1
+              ^VelL 1
+              ^X <entityInMemoryPositionX>
+              ^Y <entityInMemoryPositionY>)
+}
+
+sp {propose*move*jewel*explore
+   (state <s> ^name explore
+             ^superstate.io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^MEMORY <memory>)
+   (<memory> ^ENTITY <entityInMemory>)
+   (<creature> ^POSITION <creaturePosition>)
+   (<creaturePosition> ^X <creaturePositionX>)
+   (<creaturePosition> ^Y <creaturePositionY>)
+   (<entityInMemory> ^TYPE JEWEL)
+   (<entityInMemory> ^X <entityInMemoryPositionX>)
+   (<entityInMemory> ^Y <entityInMemoryPositionY>)
+   (<entityInMemory> ^NAME <entityInMemoryName>)
+   (<entityInMemory> ^COLOR <entityInMemoryColor>)
+   #(<creature> ^LEAFLETS.LEAFLET.<entityInMemoryColor>.MISSING > 0)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name moveJewel)
+   (<o> ^parameter <jewel>)
+   (<jewel> ^distance (sqrt (+ (* (- <creaturePositionX> <entityInMemoryPositionX>) (- <creaturePositionX> <entityInMemoryPositionX>)) (* (- <creaturePositionY> <entityInMemoryPositionY>) (- <creaturePositionY> <entityInMemoryPositionY>)))))
+   (<jewel> ^X <entityInMemoryPositionX>)
+   (<jewel> ^Y <entityInMemoryPositionY>)
+   (<jewel> ^NAME <entityInMemoryName>)
+   (<jewel> ^COLOR <entityInMemoryColor>)
+   (<o> ^actions.MOVE <command>)
+   (<command> ^Vel 1
+              ^VelR 1
+              ^VelL 1
+              ^X <entityInMemoryPositionX>
+              ^Y <entityInMemoryPositionY>)
+}
+
+sp {propose*colect_leaflet
+   (state <s> ^name plan-agent
+              ^leaflets.leaflet <l>)
+   (<l> ^collectable Yes
+        ^id <lID>
+        ^score <lscore>)
+-->
+   (<s> ^operator <op> + =)
+   (<op> ^name collect_leaflet
+         ^param <lscore>
+         ^leafletID <lID>)
+}
+
+sp {preferences*best*colect_leaflet
+   (state <s> ^name plan-agent
+              ^operator <o> +)
+   (<o> ^name collect_leaflet)
+-->
+   (<s> ^operator <o> >)
+}
+
+
+sp {preferences*high-score-better*colect_leaflet
+   (state <s> ^name plan-agent
+              ^operator <o1> +
+              ^operator <o2> + )
+   (<o1> ^name collect_leaflet
+         ^param <score1>)
+   (<o2> ^name collect_leaflet
+         ^param <score2> < <score1>)
+-->
+   (<s> ^operator <o1> > <o2>)
+}
+
+#sp {preferences*same-score-indiferrent*colect_leaflet
+#   (state <s> ^name plan-agent
+#              ^operator <o1> +
+#              ^operator <o2> + { <> <o1> <o2> })
+#   (<o1> ^name collect_leaflet
+#         ^param <score1>)
+#   (<o2> ^name collect_leaflet
+#         ^param <score2> = <score1>)
+#-->
+#   (<s> ^operator <o1> =)
+#   (<s> ^operator <o2> =)
+#}
+
+sp {elaborate*state*collect_leaflet*create-visual-representations
+   (state <s> ^name collect_leaflet)
+-->
+   (<s> ^visual <mem>)
+}
+
+sp {elaborate*state*collect_leaflet*copy-visual-entity
+   (state <s> ^name collect_leaflet
+              ^superstate.io.input-link <in>
+              ^visual <agent-visual>)
+   (<in> ^CREATURE.SENSOR.VISUAL <visual>)
+   (<visual> ^ENTITY <entity>)
+   (<entity> ^TYPE <type>
+             ^COLOR <color>
+             ^DISTANCE <dist>
+             ^NAME <name>)
+-->
+   (<agent-visual> ^entity <agent-entity>)
+   (<agent-entity> ^type <type>
+                   ^color <color>
+                   ^distance <dist>
+                   ^name <name>)
+}
+
+
+sp {elaborate*state*collect_leaflet*copy-visual-to-evaluate-state
+   (state <s> ^name collect_leaflet
+             ^name evaluate-operator
+             ^visual <visual2>
+             ^superstate.superstate <ss>)
+   (<ss> ^visual <visual>)
+   (<visual> ^entity <entity>)
+   (<entity> ^type <type>
+             ^color <color>
+             ^distance <dist>
+             ^name <name>)
+-->
+   (<visual2> ^entity <entity2>)
+   (<entity2> ^type <type>
+             ^color <color>
+             ^distance <dist>
+             ^name <name>)
+}
+
+sp {elaborate*state*create-leaflet-count-representation
+   (state <s> ^name plan-agent
+              ^io.input-link.CREATURE.LEAFLETS.LEAFLET <l>
+              ^leaflets <a>)
+   (<l> ^ID <lID>
+        ^DELIVERED NO
+        ^SCORE <score>)
+-->
+   (<a> ^leaflet <l2>)
+   (<l2> ^id <lID>
+         ^score <score>)
+}
+
+
+sp {colect_leaflet*elaborate*state*verify-if-leaflet-do-not-need-color
+   (state <s> ^name plan-agent
+              ^leaflets.leaflet <l1>
+              ^io.input-link.CREATURE <creature>)
+   (<creature> ^LEAFLETS.LEAFLET <l2>)
+   (<l1> ^id <lID>)
+   (<l2> ^ID <lID>
+         ^<color>.MISSING 0.0)
+-->
+   (<l1> ^<color> Yes)
+}
+
+
+sp {colect_leaflet*elaborate*state*verify-if-leaflet-need-1-color
+   (state <s> ^name plan-agent
+              ^leaflets.leaflet <l1>
+              ^io.input-link.CREATURE <creature>)
+   (<creature> ^LEAFLETS.LEAFLET <l2>
+               ^MEMORY <mem>)
+   (<l1> ^id <lID>)
+   (<l2> ^ID <lID>
+        ^<color>.MISSING 1.0)
+   (<mem> ^ENTITY <e>)
+   (<e> ^TYPE JEWEL
+        ^COLOR <color>)
+-->
+   (<l1> ^<color> Yes)
+}
+
+
+sp {colect_leaflet*elaborate*state*verify-if-leaflet-need-2-color
+   (state <s> ^name plan-agent
+              ^leaflets.leaflet <l1>
+              ^io.input-link.CREATURE <creature>)
+   (<creature> ^LEAFLETS.LEAFLET <l2>
+               ^MEMORY <mem>)
+   (<l1> ^id <lID>)
+   (<l2> ^ID <lID>
+        ^<color>.MISSING 2.0)
+   (<mem> ^ENTITY <e1> { <> <e1> <e2> })
+   (<e1> ^TYPE JEWEL
+        ^COLOR <color>)
+   (<e2> ^TYPE JEWEL
+        ^COLOR <color>)
+-->
+   (<l1> ^<color> Yes)
+}
+
+
+sp {colect_leaflet*elaborate*state*verify-if-leaflet-can-be-completed
+   (state <s> ^name plan-agent
+              ^leaflets.leaflet <l>)
+   (<l> ^id <lID>
+        ^Red Yes
+        ^Green Yes
+        ^Blue Yes
+        ^Yellow Yes
+        ^Magenta Yes
+        ^White Yes)
+-->
+   (<l> ^collectable Yes)
+}
+
+sp {elaborate*state*collect_leaflet*create-memory-representations
+   (state <s> ^name collect_leaflet)
+-->
+   (<s> ^memory <mem>)
+}
+
+sp {elaborate*state*collect_leaflet*copy-memory-entity
+   (state <s> ^name collect_leaflet
+              ^superstate.io.input-link <in>
+              ^memory <agent-memory>)
+   (<in> ^CREATURE.MEMORY <mem>)
+   (<mem> ^ENTITY <entity>)
+   (<entity> ^TYPE <type>
+             ^COLOR <color>
+             ^DISTANCE <dist>
+             ^NAME <name>
+             ^X <posx>
+             ^Y <posy>)
+-->
+   (<agent-memory> ^entity <agent-entity>)
+   (<agent-entity> ^type <type>
+                   ^color <color>
+                   ^distance <dist>
+                   ^name <name>
+                   ^x <posx>
+                   ^y <posy>)
+}
+
+sp {elaborate*state*collect_leaflet*copy-memory-to-evaluate-state
+   (state <s> ^name collect_leaflet
+             ^name evaluate-operator
+             ^memory <mem2>
+             ^superstate.superstate <ss>)
+   (<ss> ^memory <mem>)
+   (<mem> ^entity <entity>)
+   (<entity> ^type <type>
+             ^color <color>
+             ^distance <dist>
+             ^name <name>
+             ^x <x>
+             ^y <y>)
+-->
+   (<mem2> ^entity <entity2>)
+   (<entity2> ^type <type>
+             ^color <color>
+             ^distance <dist>
+             ^name <name>
+             ^x <x>
+             ^y <y>)
+}
+
+sp {propose*get*jewel*collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^visual <visual>)
+   (<visual> ^entity <entity>)
+   (<entity> ^type JEWEL) 
+   (<entity> ^distance <jewelDistance> < 50)
+   (<entity> ^name <jewelName>)
+   (<entity> ^color <jewelColor>)
+#   (<creature> ^MEMORY.ENTITY.NAME <memoryItemName> <jewelName>)     
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name getJewel)
+   (<o> ^parameter <jewel>)
+   (<jewel> ^DISTANCE <jewelDistance>
+            ^NAME <jewelName>
+            ^COLOR <jewelColor>)
+   (<o> ^actions.GET <command>)
+   (<command> ^Name <jewelName>)
+}
+
+
+sp {moveJewel*getJewel*preferences*Collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name getJewel)
+   (<o2> ^name << moveJewel moveFood moveDelivery avoidBrick >>)
+-->
+   (<s> ^operator <o> > <o2>)
+}
+
+#Get Jewel application for solving a tie impasse
+#Instead of creating output commands the state representations of the enviroment is changed to simulate the action
+
+sp {apply*get_jewel*mind-representation-manipulation
+   (state <s> ^operator <o>
+              ^memory <mem>
+              ^visual <visual>
+              ^leaflet <l>
+              ^superstate.name selection)
+   (<l> ^<color> <missing>)
+   (<o> ^name getJewel
+        ^parameter <param>)
+   (<param> ^NAME <jname>
+            ^COLOR <color>)
+   (<mem> ^entity <entity1>)
+   (<visual> ^entity <entity2>)
+   (<entity1> ^type JEWEL
+             ^name <jname>
+             ^distance <dist1>)
+   (<entity2> ^type JEWEL
+             ^name <jname>
+             ^distance <dist2>)
+-->
+   (<mem> ^entity <entity1> -)
+   (<visual> ^entity <entity2> -)
+   (<l> ^<color> <missing> -
+                 (- <missing> 1))
+}
+
+sp {propose*move*jewel*collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^memory <mem>
+              ^fuel >= 400)
+   (<mem> ^entity <entityInMemory>)
+   (<entityInMemory> ^type JEWEL)
+   (<entityInMemory> ^distance <entityInMemoryDistance>)
+   (<entityInMemory> ^x <entityInMemoryPositionX>)
+   (<entityInMemory> ^y <entityInMemoryPositionY>)
+   (<entityInMemory> ^name <entityInMemoryName>)
+   (<entityInMemory> ^color <entityInMemoryColor>)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name moveJewel)
+   (<o> ^parameter <jewel>)
+   (<jewel> ^distance <entityInMemoryDistance>)
+   (<jewel> ^x <entityInMemoryPositionX>)
+   (<jewel> ^y <entityInMemoryPositionY>)
+   (<jewel> ^name <entityInMemoryName>)
+   (<jewel> ^color <entityInMemoryColor>)
+   (<o> ^actions.MOVE <command>)
+   (<command> ^Vel 1
+              ^VelR 1
+              ^VelL 1
+              ^X <entityInMemoryPositionX>
+              ^Y <entityInMemoryPositionY>)
+}
+
+#sp {move_jewel*preference*reject-if-not-memory
+#   (state <s> ^operator <op> +
+#              ^name collect_leaflet
+#             -^memory.entity.name <jname>)
+#   (<op> ^name moveJewel
+#         ^parameter <jewel>)
+#   (<jewel> ^name <jname>)
+#-->
+#   (<s> ^operator <op> -)
+#}
+   
+   
+sp {apply*move_jewel*mind-representation-manipulation*change-memory
+   (state <s> ^operator <op>
+              ^memory <mem>
+              ^leaflet <l>
+              ^fuel <fuel>
+              ^superstate.name selection)
+   (<l> ^<color> <missing>)
+   (<op> ^name moveJewel
+         ^parameter <jewel>)
+   (<jewel> ^name <jname>
+            ^color <color>
+            ^distance <dist>)
+   (<mem> ^entity <entity1>)
+   (<entity1> ^type JEWEL
+             ^name <jname>
+             ^distance <dist1>)
+-->
+   (<mem> ^entity <entity1> -)
+   (<l> ^<color> <missing> -
+                 (- <missing> 1))
+   (<s> ^fuel ( - <fuel> ( * <dist> 0.1 ))
+              <fuel> -)
+}
+
+#sp {apply*move_jewel*mind-representation-manipulation*change-visual
+#   (state <s> ^operator <op>
+#              ^memory.entity <entity1>
+#              ^visual <visual>
+#              ^superstate.name selection)
+#   (<op> ^name moveJewel
+#         ^parameter <jewel>)
+#   (<jewel> ^name <jname>
+#            ^color <color>)
+#   (<visual> -^entity.name <jname>)
+#   (<entity1> ^type JEWEL
+#             ^name <jname>
+#             ^distance <dist1>)
+#-->
+#   (<visual> ^entity <agent-entity>)
+#   (<agent-entity> ^type JEWEL
+#                   ^color <color>
+#                   ^distance 40
+#                   ^name <jname>)
+#   (<entity1> ^distance 40
+#                       <dist1> -)
+#}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Move Jewel application for solving a tie impasse
+#Instead of creating output commands the state representations of the enviroment is changed to simulate the action
+#sp {apply*move_jewel*mind-representation-manipulation*change-memory
+#   (state <s> ^operator <op>
+#              ^memory.entity <entity1>
+#              ^visual.entity <entity2>
+#              ^superstate.name selection)
+#   (<op> ^name moveJewel
+#         ^parameter <jewel>)
+#   (<jewel> ^name <jname>)
+#   (<entity1> ^type JEWEL
+#             ^name <jname>
+#             ^distance <dist1>)
+#   (<entity2> ^type JEWEL
+#             ^name <jname>
+#             ^distance <dist2>)
+#-->
+#   (<entity1> ^distance 40
+#                       <dist1> -)
+#   (<entity2> ^distance 40
+#                       <dist2> -)
+#}
+#
+#sp {apply*move_jewel*mind-representation-manipulation*change-visual
+#   (state <s> ^operator <op>
+#              ^memory.entity <entity1>
+#              ^visual <visual>
+#              ^superstate.name selection)
+#   (<op> ^name moveJewel
+#         ^parameter <jewel>)
+#   (<jewel> ^name <jname>
+#            ^color <color>)
+#   (<visual> -^entity.name <jname>)
+#   (<entity1> ^type JEWEL
+#             ^name <jname>
+#             ^distance <dist1>)
+#-->
+#   (<visual> ^entity <agent-entity>)
+#   (<agent-entity> ^type JEWEL
+#                   ^color <color>
+#                   ^distance 40
+#                   ^name <jname>)
+#   (<entity1> ^distance 40
+#                       <dist1> -)
+#}
+
+sp {elaborate*state*collect-leaflet*desired-state
+   (state <s> ^name collect_leaflet)
+-->
+   (<s> ^problem-space <p>)
+   (<p> ^name collect_leaflet
+        ^default-state-copy no)
+}
+
+sp {elaborate*state*copy-down-leaflet-score
+   (state <s> ^name collect_leaflet
+              ^superstate.operator <o>)
+   (<o> ^name collect_leaflet)
+-->
+   (<s> ^desired <d>)
+   (<d> ^leaflet <dl>)
+   (<dl> ^completed YES
+         ^delivered YES)
+}
+
+#sp {elaborate*state*add-numeric-distance
+#   (state <s> ^name collect_leaflet
+#              ^desired <d>
+#              ^tried-tied-operator <o>)
+#   (<o> ^name moveJewel
+#        ^parameter.distance <dis>)
+#-->
+#   (<s> ^numeric-value <dis>)
+#}
+#
+
+sp {elaborate*do-not-know
+   (state <s> ^name collect_leaflet
+              ^operator <o> +)
+   (<o> -^name <n>)
+-->
+   (<s> ^operator <o> -)
+}
+
+sp {elaborate*state*collect_leaflet*create-leaflet-representations
+   (state <s> ^name collect_leaflet)
+-->
+   (<s> ^leaflet <l>)
+}
+
+sp {elaborate*state*copy-leaflet-to-collect
+   (state <s> ^name collect_leaflet
+              ^leaflet <sl>
+              ^superstate <ss>)
+   (<ss> ^operator <o>)
+   (<o> ^name collect_leaflet
+        ^leafletID <lID>)
+   (<ss> ^io.input-link.CREATURE.LEAFLETS.LEAFLET <l>)
+   (<l> ^ID <lID>
+        ^Red.MISSING <r>
+        ^Green.MISSING <g>
+        ^Blue.MISSING <b>
+        ^Yellow.MISSING <y>
+        ^Magenta.MISSING <m>
+        ^White.MISSING <w>
+        ^COMPLETED <completed>)
+-->
+   (<sl> ^id <lID>
+         ^Red <r>
+         ^Green <g>
+         ^Blue <b>
+         ^Yellow <y>
+         ^Magenta <m>
+         ^White <w>
+         ^completed <completed>
+         ^delivered NO)
+}
+
+
+sp {elaborate*state*collect_leaflet*copy-leaflet-to-evaluate-state
+   (state <s> ^name collect_leaflet
+             ^name evaluate-operator
+             ^leaflet <l2>
+             ^superstate.superstate <ss>)
+   (<ss> ^leaflet <l>)
+   (<l> ^<att> <value>)
+-->
+   (<l2> ^<att> <value>)
+}
+
+
+sp {elaborate*state*completed-goal-leaflet
+   (state <s> ^name collect_leaflet
+              ^leaflet <l>)
+   (<l>  ^Red 0.0
+         ^Green 0.0
+         ^Blue 0.0
+         ^Yellow 0.0
+         ^Magenta 0.0
+         ^White 0.0)
+-->
+   (<l> ^completed YES
+                   NO -)
+}
+
+
+###
+###        7.3.4   Halting Soar with success or failure
+###
+
+###         A. top-goal*halt*state*success
+### Handle state augmentations dealing with goal termination for the top-level goal.
+
+sp {top-goal*halt*success
+   :default
+   (state <s> ^name <name>
+              ^desired <eb>
+              ^superstate nil
+              ^<< required-success success >> <eb>)
+-->
+#   (write (crlf)   <name>  | achieved |)
+   (halt)}
+
+###         B. top-goal*halt*state*failure
+
+sp {top-goal*halt*failure
+   :default
+   (state <s> ^superstate nil
+              ^desired <eb>
+              ^name <name>
+              ^ << prohibit-failure failure exhaustion-failure >> <eb>)
+-->
+#   (write (crlf)  <name>  | failed|)
+   (halt)}
+
+
+
+
+### Use selection for all choice multiple, impasses
+
+sp {selection*elaborate*name*selection
+   :default
+   (state <s> ^choices multiple)
+-->
+   (<s> ^name selection)}
+
+###
+###      Evaluation Objects
+###
+
+sp {selection*elaborate*evaluation*value
+   :default
+   (state <s> ^evaluation <e>)
+   (<e> ^ << numeric-value symbolic-value expected-value >>)
+-->
+   (<e> ^value true)}
+
+sp {selection*elaborate*evaluation*desired
+   :default
+   (state <s> ^superstate.desired <d>
+              ^evaluation <e>)
+-->
+   (<e> ^desired <d>)}
+
+###
+###     7.3.3   Computing evaluations
+###
+###
+###     7.3.3.1 Converting expected-values to numeric preferences
+###
+
+### If two operators have equal evaluations they are indifferent.
+
+sp {selection*evaluation*expected-values
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>)
+   (<ss> ^desired <d>)
+   (<e1> ^superoperator <x>
+         ^expected-value <v>
+         ^desired <d>)
+-->
+   (<ss> ^operator <x> = <v>)}
+
+
+###
+###     7.3.3.2 Comparing numeric evaluations
+###
+
+### If two operators have equal evaluations they are indifferent.
+
+sp {selection*compare*equal-evaluation-indifferent
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>  { <> <e1> <e2> })
+   (<ss> ^desired <d>)
+   (<e1> ^superoperator <x>
+         ^numeric-value <v>
+         ^desired <d>)
+   (<e2> ^superoperator <y>
+         ^numeric-value <v>
+         ^desired <d>)
+  - (<d> ^equal not-indifferent)
+-->
+   (<ss> ^operator <x> = <y>)}
+
+
+###
+### Generate operator preferences based on their evaluations and info
+### as to whether higher or lower evaluations are better.
+
+sp {selection*compare*higher-evaluation-better
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>
+              ^evaluation { <> <e1> <e2> })
+   (<ss> ^problem-space <p2>
+         ^desired <d>)
+   (<e1> ^superoperator <o1>
+         ^numeric-value <v>
+         ^desired <d>)
+   (<e2> ^superoperator <o2>
+         ^numeric-value < <v>
+         ^desired <d>)
+   (<d> ^better higher)
+-->
+   (<ss> ^operator <o2> < <o1>)}
+
+sp {selection*compare*prefer-lower-evaluation
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>
+              ^evaluation { <> <e1> <e2> })
+   (<ss> ^problem-space <p2>
+         ^desired <d>)
+   (<e1> ^superoperator <o1>
+         ^numeric-value <v>
+         ^desired <d>)
+   (<e2> ^superoperator <o2>
+         ^numeric-value > <v>
+         ^desired <d>)
+   (<d> ^better lower)
+-->
+   (<ss> ^operator <o2> < <o1>)}
+
+
+###
+###      7.3.3.3 Computing symbolic evaluations
+###
+
+
+sp {selection*compare*same-symbolic-evaluations-are-indifferent
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>  { <> <e1> <e2> })
+   (<ss> ^desired <d>)
+   (<e1> ^superoperator <x>
+         ^symbolic-value <v>
+         ^desired <d>)
+   (<e2> ^superoperator <y>
+         ^symbolic-value { <> exhaustion-failure <v> }
+         ^desired <d>)
+-->
+   (<ss> ^operator <x> = <y>)}
+
+sp {selection*compare*same-symbolic-evaluations-are-indifferent*exhaustion-failure
+   :default
+   (state <s> ^name selection
+              ^quiescence t
+              ^superstate <ss>
+              ^evaluation <e1>  { <> <e1> <e2> })
+   (<ss> ^desired <d>)
+   (<e1> ^superoperator <x>
+         ^symbolic-value exhaustion-failure
+         ^desired <d>)
+   (<e2> ^superoperator <y>
+         ^symbolic-value exhaustion-failure
+         ^desired <d>)
+-->
+   (<ss> ^operator <x> = <y>)}
+
+sp {selection*compare*success-evaluation-better-than-partial-success
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1> { <> <e1> <e2> })
+   (<ss> ^desired <d>)
+   (<e1> ^superoperator <x>
+         ^symbolic-value success
+         ^desired <d>)
+   (<e2> ^superoperator { <> <x> <y> }
+         ^symbolic-value partial-success
+         ^desired <d>)
+-->
+   (<ss> ^operator <x> > <y>)}
+
+sp {selection*compare*partial-failure-evaluation-better-than-failure
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>  { <> <e1> <e2> })
+   (<ss> ^desired <d>)
+   (<e1> ^superoperator <x>
+         ^symbolic-value partial-failure
+         ^desired <d>)
+   (<e2> ^superoperator { <> <x> <y> }
+         ^symbolic-value failure
+         ^desired <d>)
+-->
+   (<ss> ^operator <x> > <y>)}
+
+sp {selection*select*required-success-evaluation-becomes-required-preference
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>)
+   (<ss> ^desired <eb>)
+   (<e1> ^symbolic-value required-success
+         ^desired <eb>
+         ^superoperator <o1>)
+-->
+   (<ss> ^operator <o1> !)}
+
+sp {selection*select*success-evaluation-becomes-best-preference
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>)
+   (<ss> ^desired <eb>)
+   (<e1> ^symbolic-value << partial-success success >>
+         ^desired <eb>
+         ^superoperator <o1>)
+-->
+   (<ss> ^operator <o1> >)}
+
+sp {selection*select*failure-evaluation-becomes-reject-preference
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>)
+   (<ss> ^desired <e>)
+   (<e1> ^symbolic-value << lose failure >>
+         ^desired <e>
+         ^superoperator <o1>)
+-->
+   (<ss> ^operator <o1> -)}
+
+## No chunking over exhaustion-failure
+sp {selection*select*exhaustion-failure-evaluation-becomes-reject-preference
+   :default
+   (state <s> ^name selection
+              ^quiescence t
+              ^superstate <ss>
+              ^evaluation <e1>)
+   (<ss> ^desired <e>)
+   (<e1> ^symbolic-value exhaustion-failure
+         ^desired <e>
+         ^superoperator <o1>)
+-->
+   (<ss> ^operator <o1> -)}
+
+sp {selection*select*prohibit-failure-evaluation-becomes-prohibit-preference
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>)
+   (<ss> ^desired <e>)
+   (<e1> ^symbolic-value prohibit-failure
+         ^desired <e>
+         ^superoperator <o1>)
+-->
+   (<ss> ^operator <o1> ~)}
+
+sp {selection*select*indifferent-evaluation-becomes-indifferent-preference
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>)
+   (<ss> ^desired <eb>)
+   (<e1> ^symbolic-value indifferent
+         ^desired <eb>
+         ^superoperator <o1>)
+-->
+   (<ss> ^operator <o1> =)}
+
+sp {selection*select*partial-failure-evaluation-becomes-worst-preference
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>)
+   (<ss> ^desired <e>)
+   (<e1> ^symbolic-value partial-failure
+         ^desired <e>
+         ^superoperator <o1>)
+-->
+   (<ss> ^operator <o1> <)}
+
+
+###
+###      7.3.3.5 Novalue evaluations
+###
+
+### Signal that there are still objects to evaluate.
+
+sp {selection*elaborate*state*all-objects-evaluated
+   :default
+   (state <s> ^name selection)
+  - {(<s> ^operator <o> +)
+     (<o> ^name evaluate-operator
+          ^evaluation.value true)}
+-->
+   (<s> ^not-all-operators-evaluated true)}
+
+### Signal that a value other than novalue has been assigned.
+
+sp {selection*elaborate*state*found-value-true
+   :default
+   (state <s> ^name selection
+              ^evaluation <e>)
+   (<e> ^ << numeric-value symbolic-value expected-value >> <> novalue)
+-->
+   (<s> ^found-value true)}
+
+### Make novalue worse than any other value.
+
+sp {selection*compare*novalue-evaluation-always-worse
+   :default
+   (state <s> ^name selection
+              ^superstate <ss>
+              ^evaluation <e1>
+              ^evaluation { <> <e1> <e2> })
+   (<ss> ^desired <d>)
+   (<e1> ^superoperator <o1>
+         ^numeric-value novalue
+         ^desired <d>)
+   (<e2> ^superoperator <o2>
+         ^numeric-value <> novalue
+         ^desired <d>)
+-->
+   (<ss> ^operator <o2> > <o1>)}
+
+### Print the evaluation of any operator that has a name (which doesn't
+### get states).
+#
+#sp {monitor*operator*evaluation
+#   :default
+#   (state <s> ^top-state <ts>
+#              ^operator <o>)
+#   (<o> ^name evaluate-operator
+#        ^superoperator <obj>
+#        ^evaluation. << numeric-value symbolic-value >> <n>)
+#   (<obj> ^name <name>)
+#   (<ts> ^superstate nil
+#        -^verbose false)
+#-->
+##   (write (crlf) |  Evaluation of | <obj> | (|
+#   <name> |) is | <n>)}
+
+###
+###      7.3.1 The evaluate-operator operator
+###
+
+### Create evaluate operator in selection problem space.
+
+sp {selection*propose*evaluate-operator
+   :default
+   (state <s> ^name selection
+              ^item <i>)
+  -{(state <s> ^evaluation <e>)
+    (<e> ^superoperator <i>
+         ^value true)}
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name evaluate-operator
+        ^superoperator <i>)}
+
+
+### Make them indifferent if not ^operator-selection not-indifferent.
+
+sp {selection*select*evaluate-operator*indifferent
+   :default
+   (state <s> ^name selection
+             -^operator-selection not-indifferent
+              ^operator <o> +)
+   (<o> ^name evaluate-operator)
+-->
+   (<s> ^operator <o> =)}
+
+### Create evaluation once the eval operator is selected.
+ 
+sp {selection*apply*state*evaluation
+   :default
+   (state <s> ^name selection
+              ^operator <o>)
+   (<o> ^name evaluate-operator
+        ^superoperator <ob>)
+-->
+   (<s> ^evaluation <e>)
+   (<e> ^superoperator <ob>)}
+
+sp {selection*elaborate*evaluate-operator*evaluation
+  # :default
+   :o-support
+   (state <s> ^name selection
+              ^operator <o>
+              ^evaluation <e>)
+   (<o> ^name evaluate-operator
+        ^superoperator <ob>)
+   (<e> ^superoperator <ob>)
+-->
+   (<o> ^evaluation <e>)}
+
+sp {selection*elaborate*evaluate-operator*superproblem-space
+   :default
+   (state <s> ^name selection
+              ^operator <o>
+              ^superstate.problem-space <p2>)
+   (<o> ^name evaluate-operator)
+-->
+   (<o> ^superproblem-space <p2>)}
+
+sp {selection*elaborate*evaluate-operator*superstate
+   :default
+   (state <s> ^name selection
+              ^operator <o>
+              ^superstate <ss>)
+   (<o> ^name evaluate-operator)
+-->
+   (<o> ^superstate <ss>)}
+###
+###      7.3.2   The evaluation subgoal
+###
+
+###
+### These productions which fire once an evaluation subgoal has been created
+### have also been generalized.
+
+
+sp {evaluate-operator*elaborate*state*desired
+   :default
+   (state <s> ^impasse no-change
+              ^attribute operator
+             -^problem-space.no-local-negations <nln>
+              ^superstate.operator <so>)
+   (<so>  -^default-desired-copy yes
+          ^name evaluate-operator
+          ^evaluation.desired <d>)
+-->
+   (<s> ^desired <d>)}
+
+sp {evaluate-operator*elaborate*state*desired*nln
+   :default
+   (state <s> ^impasse no-change
+              ^attribute operator
+              ^problem-space.no-local-negations <nln>
+              ^superstate.operator <so>)
+   (<so>   ^name evaluate-operator # ddc is assumed no with nln
+          ^evaluation.desired <d>)
+-->
+   (<s> ^desired <d>)}
+
+sp {evaluate-operator*elaborate*state*name
+   :default
+   (state <s> ^impasse no-change
+              ^attribute operator
+              ^superstate.operator <so>)
+   (<so> ^name evaluate-operator
+         ^superstate.name {<> evaluate-operator <name> })
+-->
+   (<s> ^name <name>)}
+
+## install a copy of the state, when ^default-state-copying and there
+## is an operator tie.
+
+sp {evaluate-operator*elaborate*state*duplicate-of
+   :default
+   (state <s> ^superstate <ss>
+              ^default-state-copy yes)
+   (<ss> ^operator <so>)
+   (<so> ^name evaluate-operator
+         ^superstate <sss>)
+-->
+   (<s> ^duplicate-of <sss>)}
+
+### Copy down operator
+
+sp {evaluate-operator*elaborate*state*look-ahead-operator*copy
+   :default
+   (state <s> ^problem-space.name <n>
+              ^default-operator-copy yes
+              ^superstate.operator <so>)
+   (<so> ^name evaluate-operator
+         ^superoperator <o>
+         ^superproblem-space.name <n>)
+-->
+   (<s> ^look-ahead-operator <copy-o>)
+   (<s> ^untried-tied-operator <copy-o>) # SBW 5/7/07-- -^tried-tied-operator -> ^untried-tied-operator
+   (<copy-o> ^duplicate-of <o>)}
+
+
+## Create pointer for uniform access even in no copy
+
+### Added test for superproblem-space.  This restricts these productions
+### to only fire in a lookahead.  Previously, these productions made it
+### impossible to use evaluation problem spaces other than lookahead.
+
+sp {evaluate-operator*elaborate*state*look-ahead-operator*no-copy
+   :default
+   (state <s> ^problem-space.name <p>
+              ^default-operator-copy no
+              ^superstate.operator <so>)
+   (<so> ^name evaluate-operator
+         ^superoperator <o>
+         ^superproblem-space.name <p>)
+-->
+   (<s> ^look-ahead-operator <o>)
+   (<s> ^untried-tied-operator <o>)}
+
+### install copy of operator in lookahead context.
+
+################################## Return Results
+sp {evaluate-operator*elaborate*symbolic-evaluation*from-subgoal
+   :default
+   (state <ss> ^superstate <s>
+               ^ { << required-success success partial-success
+                   indifferent partial-failure exhaustion-failure failure prohibit-failure
+                   >> <svalue> } <eb>)
+   (<s> ^operator <so>
+        ^evaluation <e>)
+   (<so> ^name evaluate-operator
+         ^evaluation <e>
+         ^evaluation.desired <eb>)
+-->
+   (<e> ^symbolic-value <svalue>)}
+
+##  Added to handle duplicated desireds
+sp {evaluate-operator*elaborate*evaluation*from-subgoal*duplicate-desired
+   :default
+   (state <s> ^superstate <ss>
+              ^ { << required-success success partial-success
+                  indifferent partial-failure exhaustion-failure failure prohibit-failure
+                  >> <svalue> } <deb>)
+   (<ss> ^operator <so>
+         ^evaluation <e>)
+   (<so> ^name evaluate-operator
+         ^evaluation <e>
+         ^evaluation.desired <eb>)
+   (<deb> ^duplicate-of <eb>)
+-->
+   (<e> ^symbolic-value <svalue>)}
+
+sp {evaluate-operator*elaborate*numeric-evaluation*from-subgoal
+   :default
+   (state <ss> ^superstate <s>
+               ^desired <eb>
+               ^numeric-value <v>)
+   (<s> ^operator <so>
+        ^evaluation <e>)
+   (<so> ^name evaluate-operator
+         ^evaluation <e>
+         ^evaluation.desired <eb>)
+-->
+   (<e> ^numeric-value <v>)}
+
+sp {evaluate-operator*elaborate*expected-evaluation*from-subgoal
+   :default
+   (state <ss> ^superstate <s>
+               ^desired <eb>
+               ^expected-value <v>)
+   (<s> ^operator <so>
+        ^evaluation <e>)
+   (<so> ^name evaluate-operator
+         ^evaluation <e>
+         ^evaluation.desired <eb>)
+-->
+   (<e> ^expected-value <v>)}
+
+
+###
+###      7.3.2.1. State Copying
+###
+
+## Switch to look at current problem space, not super
+## If no signals on problem space, the default is to copy both state and operator
+
+sp {evaluate-operator*elaborate*default-for-default-state-copy-is-yes
+   :default
+   (state <s> ^superstate.operator.name evaluate-operator
+              ^problem-space <p>)
+  -(<p> ^default-state-copy no)
+-->
+   (<s> ^default-state-copy yes)}
+
+sp {evaluate-operator*elaborate*default-state-copy-from-problem-space
+   :default
+   (state <s> ^superstate.operator.name evaluate-operator
+              ^problem-space.default-state-copy <yes-or-no>)
+-->
+   (<s> ^default-state-copy <yes-or-no>)}
+
+### Default is that all-attributes-at-level are copied
+
+sp {evaluate-operator*elaborate*state*default-copy-is-all-attributes-at-level-one
+   :default
+   (state <s> ^impasse no-change
+              ^attribute operator
+              ^superstate.operator.name evaluate-operator
+              ^problem-space <p>)
+   (<p> -^all-attributes-at-level two
+        -^one-level-attributes
+        -^two-level-attributes
+        -^dont-copy
+        -^dont-copy-anything)
+-->
+   (<s> ^all-attributes-at-level one)}
+
+sp {evaluate-operator*elaborate*state*default-copy-is-all-attributes-at-level-one*no-problem-space
+   :default
+   (state <s> ^impasse no-change
+             -^problem-space
+              ^attribute operator
+              ^superstate.operator <so>)
+   (<so> ^name evaluate-operator
+        -^superproblem-space <p>)
+-->
+   (<s> ^all-attributes-at-level one)}
+
+### We want ^all-attributes-at-level one to be on the goal, but if someone
+### puts it on the space along with the other copying flags, we should allow
+### that.  So, copy it from the space to the goal.
+
+sp {evaluate-operator*elaborate*state*copy-all-attributes-at-level-one-from-problem-space
+   :default
+   (state <s> ^problem-space.all-attributes-at-level one
+              ^default-state-copy yes)
+-->
+   (<s> ^all-attributes-at-level one)}
+
+### Set up identifier mapping table for state duplication.
+
+sp {evaluate-operator*elaborate*state*create-duplicates-table
+   :default
+   (state <s> ^impasse no-change
+              ^attribute operator
+              ^default-state-copy yes
+              ^superstate.operator.name evaluate-operator)
+-->
+   (<s> ^duplicates <d>)}
+
+### Copy one-level-attributes.
+
+sp {evaluate-operator*elaborate*state*add-one-level-attributes
+   :default
+   (state <s> ^problem-space.one-level-attributes <att>
+              ^duplicate-of.<att> <val>
+              ^default-state-copy yes)
+-->
+   (<s> ^<att> <val>)}
+
+## Copy all attributes, when ^all-attributes-at-level one.
+
+sp {evaluate-operator*elaborate*state*add-all-attributes-at-level-one
+   :default
+   (state <s> ^problem-space <p>
+                             ^default-state-copy yes
+                             ^all-attributes-at-level one
+                             ^duplicate-of <ss>)
+   (<p> -^dont-copy-anything
+        -^dont-copy <att>)
+   (<ss> ^{ <> duplicate-of <> tried-tied-operator <> problem-space
+            <> impasse <> attribute <> choices <> quiescence
+            <> operator <> superstate <> type <> name <> look-ahead-operator
+            <att> } <val>)
+-->
+   (<s> ^<att> <val>)}
+
+### If we copied a one-level-attribute, and it later turned
+### out that its value happened to be something that was pointed to by a
+### two-level-attribute, change its value to be the copied object.
+
+sp {evaluate-operator*elaborate*state*change-one-level-attribute-to-duplicate
+   :default
+   (state <s> ^problem-space.one-level-attributes <att>
+              ^duplicates.<id> <new-id>
+              ^default-state-copy yes
+              ^duplicate-of.<att> <id>)
+-->
+   (<s> ^<att> <id> -
+        ^<att> <new-id>)}
+
+### Fixes, when all-attributess-at-level one.
+
+sp {evaluate-operator*elaborate*state*change-all-attributes-at-level-one-to-duplicate
+   :default
+   (state <s> -^problem-space.dont-copy <att>
+        ^default-state-copy yes
+        ^all-attributes-at-level one
+        ^duplicates.<id> <new-id>
+        ^duplicate-of.{ <> tried-tied-operator <att> } <id>)
+-->
+   (<s> ^<att> <id> -
+        ^<att> <new-id>)}
+
+### Create new ids for two-level-attributes.
+
+sp {evaluate-operator*elaborate*state*duplicate-id-for-attribute
+   :default
+   (state <s> ^problem-space.two-level-attributes <att>
+              ^duplicates <d>
+              ^default-state-copy yes
+              ^duplicate-of.<att> <id>)
+-->
+   (<d> ^<id> <new-id>)}
+
+### Create new ids for all attributes, when ^all-attributes-at-level two.
+
+sp {evaluate-operator*elaborate*state*duplicate-id-for-all-attributes
+   :default
+   (state <s> ^problem-space <p>
+              ^duplicates <d>
+              ^default-state-copy yes
+              ^duplicate-of <ss>)
+   (<p> -^dont-copy-anything
+        -^dont-copy <att>
+              ^all-attributes-at-level two
+             -^one-level-attributes <att>)
+   (<ss> ^{ <> duplicate-of <> tried-tied-operator <> problem-space
+            <> impasse <> attribute <> choices <> quiescence
+            <> operator <> superstate
+            <att> } <id>)
+-->
+   (<d> ^<id> <new-id>)}
+
+### Create a copy of the old object on the new link.  First copy
+### augmentations that don't point to objects that have been
+### duplicated.
+
+              warnings --off
+sp {evaluate-operator*elaborate*add-attribute-to-duplicate
+   :default
+   (state <s> ^duplicates <d>
+             -^problem-space.no-local-negations <nln>
+             -^problem-space.dont-copy <sub-att>
+              ^default-state-copy yes)
+   (<d> ^<id> <new-id>
+             - ^<sub-val>)
+   (<id> ^ { <> tried-tied-operator <sub-att> } <sub-val>)
+-->
+   (<new-id> ^<sub-att> <sub-val>)}
+                        warnings --on
+
+              warnings --off
+sp {evaluate-operator*elaborate*add-attribute-to-duplicate*nln
+   :default
+   (state <s> ^duplicates <d>
+              ^problem-space.no-local-negations <nln>
+              ^default-state-copy yes)
+   (<d> ^<id> <new-id>)
+   (<id> ^ { <> tried-tied-operator <sub-att> } <sub-val>)
+-->
+   (<new-id> ^<sub-att> <sub-val>)}
+                        warnings --on
+
+
+### Next copy augmentations that point to duplicated objects:
+                        warnings --off
+sp {evaluate-operator*elaborate*add-duplicated-attribute-to-duplicate
+   :default
+   (state <s> ^duplicates <d>
+              ^default-state-copy yes)
+   (<d> ^<id> <new-id>
+        ^<sub-val> <new-val>)
+   (<id> ^ { <> tried-tied-operator <sub-att> } <sub-val>)
+-->
+   (<new-id> ^<sub-att> <new-val>)}
+                        warnings --on
+### Added ^two-level-attributes <att>.  Previously, it
+### would copy any attribute that happened to point to the same value as
+### one of the two-level-attributes.
+sp {evaluate-operator*elaborate*state*add-duplicate-to-state
+   :default
+   (state <s> ^problem-space.two-level-attributes <att>
+              ^duplicates.<id> <new-id>
+              ^default-state-copy yes
+              ^duplicate-of.<att> <id>)
+-->
+   (<s> ^<att> <new-id>)}
+
+
+### moves the new links to the state when ^all-atts two.
+
+sp {evaluate-operator*elaborate*state*add-duplicates-for-all-attributes
+   :default
+   (state <s> ^problem-space <p>
+              ^duplicates.<id> <new-id>
+              ^default-state-copy yes
+              ^duplicate-of.{ <> tried-tied-operator <att> } <id>)
+   (<p> ^all-attributes-at-level two
+     - ^dont-copy-anything
+     - ^dont-copy <att>
+     - ^one-level-attributes <att>)
+-->
+   (<s> ^<att> <new-id>)}
+
+## -------------------------------
+## Desired copying:
+## -------------------------------
+
+## Copy attributes to the duplicate desired state.  We
+## do this after the state is installed so that the duplicates table
+## will already have been filled in.  We just copy all attributes over
+## from the original operator, except that attributes that pointed to
+## objects that have been duplicated (on the state) are modified to point
+## to the duplicate objects.
+
+sp {evaluate-operator*elaborate*state*eval*desired
+   :default
+   (state <s> ^superstate <ss>)
+   (<ss> ^operator <so>)
+   (<so> ^name evaluate-operator
+         ^evaluation.desired <d>
+         ^default-desired-copy yes)
+-->
+   (<s> ^desired <d-copy>)
+   (<d-copy> ^duplicate-of <d>)}
+
+
+## Copy attributes whose values haven't been duplicated.
+
+### SBH/mvp 9-2-94
+### Also, added the condition that the desired be attached to
+### an evaluation superoperator.  This is because if we use the same
+### desired in a lower lookahead context, this production re-firing
+### can cause stupid chunks.
+
+sp {duplicate-desired*copy-old-value
+   :default
+   (state <s> ^superstate.operator <so>
+              ^problem-space <p>
+              ^duplicates <d>
+              ^desired <o-copy>)
+   (<so> ^name evaluate-operator
+         ^evaluation.desired <o>)
+   (<o-copy> ^duplicate-of <o>)
+   (<o> ^{ <> duplicate-of <att> } <val>)
+ - (<p> ^dont-copy <att>)
+ - (<d> ^<val>)
+-->
+   (<o-copy> ^<att> <val>)}
+
+## Copy attributes whose values have been duplicated.
+
+sp {duplicate-desired*replace-old-value
+   :default
+   (state <s> ^duplicates.<id> <copy-id>
+              ^problem-space <p> 
+              ^desired <o-copy>)
+   (<o-copy> ^duplicate-of <o>)
+   (<o> ^ { <> duplicate-of <att> } <id>)
+   (<p> - ^dont-copy <att>)
+-->
+   (<o-copy> ^<att> <copy-id>)}
+
+
+
+###      7.3.2.3 Operator copying
+###
+### Copy attributes to the duplicate operator.  We
+### do this after the state is installed so that the duplicates table
+### will already have been filled in.  We just copy all attributes over
+### from the original operator, except that attributes that pointed to
+### objects that have been duplicated (on the state) are modified to point
+### to the duplicate objects.
+
+sp {evaluate-operator*elaborate*operator*default-operator-copy-is-yes
+   :default
+   (state <s> ^superstate.operator.name evaluate-operator
+              ^problem-space <ps>)
+   (<ps> -^default-operator-copy no)
+-->
+   (<s> ^default-operator-copy yes)}
+
+
+sp {evaluate-operator*elaborate*operator*copy-default-operator-copy-from-problem-space
+   :default
+   (state <s> ^superstate.operator.name evaluate-operator
+              ^problem-space.default-operator-copy <yes-or-no>)
+-->
+   (<s> ^default-operator-copy <yes-or-no>)}
+
+### Set up identifier mapping table for operator
+
+sp {evaluate-operator*elaborate*state*create-duplicates-table-for-operator-only
+   :default
+   (state <s> ^impasse no-change
+              ^attribute operator
+              ^default-operator-copy yes
+                                    - ^default-state-copy yes)
+-->
+   (<s> ^duplicates <d>)}
+
+### Copy attributes whose values haven't been duplicated.
+###
+
+sp {evaluate-operator*elaborate*operator*add-attribute-to-duplicate-operator
+   :default
+   (state <s> ^duplicates <d>
+          ^problem-space <p>
+        ^look-ahead-operator <o-copy>)
+   (<o-copy> ^duplicate-of <o>)
+   (<o> ^ { <> duplicate-of <att> } <val>)
+   (<p> -^dont-copy <att>
+        -^no-local-negations <nln>)
+   (<d> - ^<val>)
+-->
+   (<o-copy> ^<att> <val>)}
+
+### Copy attributes whose values have been duplicated.
+
+sp {evaluate-operator*elaborate*operator*add-duplicated-attribute-to-duplicate-operator
+   :default
+   (state <s> ^duplicates <d>
+          ^problem-space <p>
+              ^look-ahead-operator <o-copy>)
+   (<o-copy> ^duplicate-of <o>)
+   (<o> ^ { <> duplicate-of <att> } <id>)
+  (<p> -^dont-copy <att>
+       -^no-local-negations <nln>)
+   (<d> ^<id> <copy-id>)
+-->
+   (<o-copy> ^<att> <copy-id>)}
+
+
+sp {evaluate-operator*elaborate*operator*add-attribute-to-duplicate-operator*nln
+   :default
+   (state <s> ^problem-space <p>
+              ^look-ahead-operator <o-copy>)
+   (<o-copy> ^duplicate-of <o>)
+   (<o> ^ { <> duplicate-of <att> } <val>)
+   (<p> ^no-local-negations <nln>)
+-->
+   (<o-copy> ^<att> <val>)}
+
+###
+###      7.5     Execution monitoring
+###
+
+### If the state is marked with ^success <d>, the goal succeeds.
+
+#sp {monitor*goal*success
+#   :default
+#   (state <s> ^top-state <ts>
+#              ^name <gname>
+#              ^desired <d>
+#              ^<< partial-success required-success success >> <d>)
+#   (<ts> ^superstate nil
+#        -^verbose false)
+#-->
+##   (write (crlf) |  Goal | <gname> | succeeded. |)}
+#
+#### If the state is marked with ^failure <d>, the goal fails.
+#
+#sp {monitor*goal*failure
+#   :default
+#   (state <s> ^top-state <ts>
+#              ^name <gname>
+#              ^desired <d>
+#              ^<< partial-failure failure exhaustion-failure prohibit-failure >> <d>)
+#   (<ts> ^superstate nil
+#        -^verbose false)
+#-->
+##   (write (crlf) |  Goal | <gname> | failed. |)}
+
+
+sp {evaluate-operator*propose*look-ahead
+   :default
+   (state <s> ^look-ahead-operator <o>
+              ^untried-tied-operator <o>)
+   -->
+   (<s> ^operator <o> +)}
+
+sp {evaluate-operator*propose*look-ahead*reject-all-others
+   :default
+   (state <s> ^look-ahead-operator <o>
+              ^untried-tied-operator <o>
+              ^operator { <> <o> <o1> } +)
+   -->
+   (<s> ^operator <o1> -)}
+
+### Detect that the operator has been tried.
+
+sp {evaluate-operator*elaborate*state*tried-tied-operator
+   :default
+   (state <s> ^operator <o> 
+              ^look-ahead-operator <o>)
+   -->
+   (<s> ^tried-tied-operator <o>)}
+
+# SBW 5/07: replaced all occurences of -^tried-tied-operator with ^untried-tied-operator
+# this takes care of lots of local negations
+sp {evaluate-operator*elaborate*state*remove*untried-tied-operator
+   :default
+   (state <s> ^look-ahead-operator <o> 
+              ^operator <o>
+              ^untried-tied-operator <o>)
+-->
+   (<s> ^untried-tied-operator <o> -)
+}
+sp {evaluate-operator*elaborate*evaluation*failure*constraint-failure
+   :default
+   (state <rej-state-imp> ^superstate <eval-g>
+                          ^attribute operator
+                          ^impasse constraint-failure
+                          ^quiescence t)
+   (<eval-g> ^superstate <select-g>
+             ^quiescence t)
+   (<select-g> ^operator <o2>
+               ^quiescence t)
+   (<select-g> ^evaluation <e2>
+               ^quiescence t)
+   (<o2> ^name evaluate-operator
+         ^evaluation <e2>)
+-->
+   (<e2> ^symbolic-value exhaustion-failure)}
+###         A. pass-back-success
+## if an operator leads to success and it is being
+## tried out in a subgoal to evaluate another operator -
+## give that second operator a success evaluation also
+
+## Dangerous rule - for success test can lead to non-optimal path being learned
+## this is the conservative version
+sp {selection*pass-back-success    
+   :default
+   (state <s> ^superstate.superstate.operator <sso>
+              ^evaluation.symbolic-value << required-success >>) # partial-success success >>)
+   (<sso> ^name evaluate-operator 
+          ^evaluation <e2> 
+          ^superoperator.name)
+   -->
+   (<e2> ^symbolic-value partial-success)}
+
+## Below is a safer way - using discounted expected value
+
+sp {selection*pass-back-expected-value-discounted  
+   :default
+   (state <s> ^superstate.superstate.operator <sso>
+              ^evaluation.expected-value <ev>) 
+   (<sso> ^name evaluate-operator 
+          ^evaluation <e2> 
+          ^superoperator.name)
+   -->
+   (<e2> ^expected-value (* .9 <ev>))}
+
+### If all operators have been evaluated, and all have value novalue, and
+### there is a operator being evaluated in a higher context, assign that
+### operator novalue.
+
+sp {selection*elaborate*evaluate-operator*all-operators-novalue
+   :default
+   (state <s> ^superstate.superstate <sss>
+              ^operator <o>
+             -^not-all-operators-evaluated
+             -^found-value
+              ^quiescence t
+              ^choices multiple)
+   (<sss> ^name selection
+                ^operator <sso>)
+   (<sso> ^name evaluate-operator
+          ^evaluation <e>)
+   -->
+   (<e> ^numeric-value novalue)}
+
+sp {evaluate-operator*elaborate*evaluation*failure*no-operators
+   :default
+   (state <goal-nc> ^superstate <state-nc>
+                    ^attribute state
+                    ^impasse no-change
+                    ^quiescence t)
+   (<state-nc> ^superstate <eval-g>
+               ^attribute state
+               ^impasse no-change
+               ^quiescence t)
+   (<eval-g> ^superstate <select-g>
+             ^quiescence t)
+   (<select-g> ^operator <o2>
+               ^evaluation <e2>)
+   (<o2> ^name evaluate-operator
+         ^evaluation <e2>)
+-->
+   (<e2> ^symbolic-value exhaustion-failure)}
+#sp {elaborate*top-state*top-state
+#   (state <s> ^superstate nil)
+#-->
+#   (<s> ^top-state <s>)
+#}
+#
+sp {elaborate*state*detect-success
+   (state <s> ^name collect_leaflet
+              ^desired <d>
+              ^leaflet <l>)
+   (<d> ^leaflet <dl>)
+   (<dl> ^delivered <deliver>
+        ^completed <complete>)
+   (<l> ^delivered <deliver>
+        ^completed <complete>)
+-->
+   (<s> ^success <d>)
+}
+sp {elaborate*state*detec-failure*collected-unecessary
+   (state <s> ^name collect_leaflet
+              ^desired <d>
+              ^leaflet <l>)
+   (<l> ^<< Red Green Blue Yellow White Magenta >> < 0)
+-->
+   (<s> ^failure <d>)
+}
+
+#sp {elaborate*state*detec-failure*fuel-low
+#   (state <s> ^name collect_leaflet
+#              ^desired <d>
+#              ^fuel <fuel> < 350)
+#-->
+#   (<s> ^failure <d>)
+#}
+
+sp {elaborations*compare*evaluate-clossest
+   (state <s> ^name selection
+              ^operator <op1> +
+                        <op2> +)
+   (<op1> ^name evaluate-operator
+          ^superoperator.parameter.distance { < <d2> })
+   (<op2> ^name evaluate-operator
+          ^superoperator.parameter.distance <d2> )
+-->
+   (<s> ^operator <op1> > <op2>)
+}
+
+#sp {elaborations*compare*reject-if-failed-earlier
+#   (state <s> ^name selection
+#              ^operator <op> +
+#              ^superstate.superstate <ss>)
+#   (<op> ^name evaluate-operator
+#         ^superoperator.parameter.name <name>)
+#   (<ss> ^name selection
+#         ^evaluation <e>)
+#   (<e> ^symbolic-value failure
+#        ^superoperator.parameter.name <name>)
+#-->
+#   (<s> ^operator <op> -)
+#}
+#
+sp {propose*deliver*leaflet*collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^visual <visual>
+              ^leaflet <l>
+              ^superstate.io.input-link <il>)
+   (<visual> ^entity <entity>)
+   (<entity> ^type DELIVERY) 
+   (<entity> ^distance <dsDist> < 130)
+   (<l> ^completed YES
+        ^delivered NO
+        ^id <lID>)
+#   (<creature> ^MEMORY.ENTITY.NAME <memoryItemName> <foodName>)     
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name deliverLeaflet)
+   (<o> ^actions.DELIVER <command>)
+   (<command> ^Id <lID>)
+}
+
+sp {moveCommands*deliverLeaflet*preferences*collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name deliverLeaflet)
+   (<o2> ^name << moveFood moveJewel moveDelivery avoidBrick >>)
+-->
+   (<s> ^operator <o> > <o2>)
+}
+
+sp {reativo*propose*move_delivery*collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^memory <mem>
+              ^leaflet <l>
+              ^fuel >= 400)
+   (<l> ^completed YES)
+   (<mem> ^entity <entityInMemory>)
+   (<entityInMemory> ^type DELIVERY)
+   (<entityInMemory> ^x <dsPosX>)
+   (<entityInMemory> ^y <dsPosY>)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name moveDelivery)
+   (<o> ^actions.MOVE <command>)
+   (<command> ^Vel 1
+              ^VelR 1
+              ^VelL 1
+              ^X <dsPosX>
+              ^Y <dsPosY>)
+}
+
+sp {apply*move_delivery*mind-representation-manipulation*change-memory
+   (state <s> ^operator <op>
+              ^memory <mem>
+              ^leaflet <l>
+              ^superstate.name selection)
+   (<l> ^delivered <del>)
+   (<op> ^name moveDelivery)
+-->
+   (<l> ^delivered YES
+                   <del> -)
+}
+
+
+sp {propose*wander*collect_leaflet
+   (state <s> ^name collect_leaflet                           
+              ^memory <mem>)
+   (<mem> -^entity.type DELIVERY)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name wander
+        ^actions.MOVE <command>)
+   (<command> ^Vel 0
+              ^VelR 2
+              ^VelL 0)         
+}
+
+sp {preference*search-delivery-before-planning
+   (state <s> ^name collect_leaflet 
+              ^operator <o1> +
+                        <o2> +)
+   (<o1> ^name wander)
+   (<o2> -^name eatFood)
+-->
+   (<s> ^operator <o1> > <o2>)
+}
+
+
+   sp {propose*move*food*collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^memory <mem>
+              ^fuel <fuel> < 400)
+   (<mem> ^entity <entityInMemory>)
+   (<entityInMemory> ^type FOOD)
+   (<entityInMemory> ^distance <dist>)
+   (<entityInMemory> ^x <entityInMemoryPositionX>)
+   (<entityInMemory> ^y <entityInMemoryPositionY>)
+   (<entityInMemory> ^name <entityInMemoryName>) 
+   (<entityInMemory> ^color <color>) 
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name moveFood)
+   (<o> ^parameter <food>)
+   (<food> ^distance <dist>)
+   (<food> ^color <color>)
+   (<food> ^name <entityInMemoryName>)
+   (<o> ^actions.MOVE <command>)
+   (<command> ^Vel 1
+              ^VelR 1
+              ^VelL 1
+              ^X <entityInMemoryPositionX>
+              ^Y <entityInMemoryPositionY>)
+}
+
+
+sp {move_food*preferences*Collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name moveFood)
+   (<o2> ^name << moveJewel moveDelivery >>)
+-->
+   (<s> ^operator <o> > <o2>)
+}
+
+sp {apply*move_food*red*mind-representation-manipulation*change-fuel
+   (state <s> ^operator <op>
+              ^memory <mem>
+              ^fuel <fuel>
+              ^superstate.name selection)
+   (<op> ^name moveFood
+         ^parameter <food>)
+   (<food> ^name <fname>
+            ^color Red
+            ^distance <dist>)
+   (<mem> ^entity <entity1>)
+   (<entity1> ^type FOOD
+             ^name <fname>
+             ^distance <dist1>)
+-->
+   (<mem> ^entity <entity1> -)
+   (<s> ^fuel (+ <fuel> 300)
+              <fuel> -)
+}
+
+sp {apply*move_food*green*mind-representation-manipulation*change-fuel
+   (state <s> ^operator <op>
+              ^memory <mem>
+              ^fuel <fuel>
+              ^superstate.name selection)
+   (<op> ^name moveFood
+         ^parameter <food>)
+   (<food> ^name <fname>
+            ^color Green
+            ^distance <dist>)
+   (<mem> ^entity <entity1>)
+   (<entity1> ^type FOOD
+             ^name <fname>
+             ^distance <dist1>)
+-->
+   (<mem> ^entity <entity1> -)
+   (<s> ^fuel (+ <fuel> 150)
+              <fuel> -)
+}
+
+sp {propose*eat*food*collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^visual <visual>)
+   (<visual> ^entity <entity>)
+   (<entity> ^type FOOD)
+   (<entity> ^distance <foodDistance> < 50)
+   (<entity> ^name <foodName>)
+#   (<creature> ^MEMORY.ENTITY.NAME <memoryItemName> <foodName>)
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name eatFood)
+   (<o> ^parameter <food>)
+   (<food> ^DISTANCE <foodDistance>)
+   (<o> ^actions.EAT <command>)
+   (<command> ^Name <foodName>)}
+
+sp {eat_food*preferences*collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name eatFood)
+   (<o2> ^name << getJewel moveJewel moveFood moveDelivery avoidBrick wander >>)
+-->
+   (<s> ^operator <o> > <o2>)
+}
+sp {elaborate*state*collect_leaflet*copy-fuel
+   (state <s> ^name collect_leaflet
+              ^superstate.io.input-link <in>)
+   (<in> ^CREATURE.SENSOR.FUEL.VALUE <sfuel>)
+-->
+   (<s> ^fuel <sfuel>)
+}
+
+sp {elaborate*state*collect_leaflet*copy-fuel-to-evaluate-state
+   (state <s> ^name collect_leaflet
+             ^name evaluate-operator
+             ^superstate.superstate <ss>)
+   (<ss> ^fuel <fuel>)
+-->
+   (<s> ^fuel <fuel>)
+}
+
+
+
+sp {propose*avoidBrick*collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^visual <visual>)
+   (<visual> ^entity <entity>)
+   (<entity> ^type <type> << BRICK DELIVERY >>)
+   (<entity> ^distance <distance> <= 75)      
+-->
+   (<s> ^operator <o> + =)     
+   (<o> ^name avoidBrick)
+   (<o> ^parameter <distance>
+        ^type <type>)
+   (<o> ^actions.MOVE <command>)
+   (<command> ^Vel -0.5
+              ^VelR 0
+              ^VelL -5)
+}
+
+sp {avoidBrick*preferences*collect_leaflet
+   (state <s> ^name collect_leaflet
+              ^operator <o> +
+                        <o2> +)
+   (<o> ^name avoidBrick)
+   (<o2> ^name << moveJewel moveFood >>)
+-->
+   (<s> ^operator <o> > <o2>)}
+
+chunk --off
+chunk --disable
+learn off
