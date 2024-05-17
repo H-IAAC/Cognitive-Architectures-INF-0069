@@ -45,6 +45,18 @@ namespace ClarionApp
 
 
 
+        /// <summary>
+        /// Public enum that represents all possibilities of agent actions
+        /// </summary>
+        public enum CreatureActions
+        {
+            DO_NOTHING,
+            ROTATE_CLOCKWISE,
+            GO_AHEAD,
+            GET_FOOD,
+            GET_JEWEL,
+            DELIVER_LEAFLET
+        }
 
 
 

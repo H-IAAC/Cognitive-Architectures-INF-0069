@@ -22,7 +22,7 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="ClarionAgentV1.cs" />
+    <Compile Include="ClarionAgentV2.cs" />
     <Compile Include="Exceptions\WorldServerConnectionError.cs" />
     <Compile Include="Exceptions\WorldServerErrorProcessingResponse.cs" />
     <Compile Include="Exceptions\WorldServerInvalidArgument.cs" />
@@ -63,8 +63,5 @@
     <EmbeddedResource Include="gtk-gui\gui.stetic">
       <LogicalName>gui.stetic</LogicalName>
     </EmbeddedResource>
-    <Compile Include="ClarionAgentV2.cs" />
-    <Compile Include="ClarionAgentV3.cs" />
-    <Compile Include="ClarionAgentV4.cs" />
   </ItemGroup>
 </Project>
